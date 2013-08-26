@@ -52,7 +52,7 @@ prepare_build:  $(BUILD_FOLDER) $(SRC_VERSION_TAG) $(BUILD_SCRIPT_LOCATION)
 #	cp -vr $(SRC_SCRIPT_LOCATION) $(BUILD_SCRIPT_LOCATION)  
 
 
-$(BUILD_SCRIPT_LOCATION):
+$(BUILD_SCRIPT_LOCATION): $(SRC_VERSION_TAG)
 	mkdir -p $@
 	cp -vr $(SRC_SCRIPT_LOCATION)/*  $(BUILD_SCRIPT_LOCATION)
 	cp -vr $(MOD_SRC_FOLDER)/*  $(BUILD_SCRIPT_LOCATION)
@@ -67,7 +67,7 @@ define ReconfigureConfig
 endef
 
 building: $(BUILD_SCRIPT_LOCATION) 
-	 $(call ReconfigureConfig,$(BUILD_SCRIPT_LOCATION)/conf)	
+	$(call ReconfigureConfig,$(BUILD_SCRIPT_LOCATION)/conf)	
 
 
 #--------------------------------------------
