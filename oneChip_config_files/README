@@ -1,0 +1,43 @@
+This folder contains configuration files and scripts, that are used 
+in the context of these tiny one chip computers.
+
+The following one Chip computers are known to be supported by these scripts:
+
+	- RaspberryPi
+
+The scripts are based to run on Arch linux.
+
+
+
+The network configuration is per default:
+
+	bridge 
+ 	+ (contains)
+	+-------> wifi with hostapd   	on wlan0
+	+
+	+-------> ethernet Port		on eth0
+
+Bridge is running with the following IP:
+
+	192.168.1.1  netmask 255.255.255.0
+
+	IPv6 is currently not enabled
+
+During the Startup of the PirateBox Scripts, the Wifi(-USB)-Adapter is added to 
+the bridge, after the hostapd brought it up.
+
+So, even with directly connection to via LAN cable to the computer, the Box is accessible via 192.168.1.1 (use ssh).
+
+
+
+The configuration can be changed, that the box will request an IP via dhcp on ethernet, when running the following commands as root:
+
+# Enable it now:
+	netctl switch-to lan_dhcp
+
+
+# For enabling the ethernet port as a normal client during bootup, run:
+	netctl disalbe lan_piratebox_bridge
+	netctl enable  lan_dhcp
+
+

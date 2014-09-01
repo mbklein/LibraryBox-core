@@ -26,13 +26,17 @@ MOD_VERSION_TAG=$(BUILD_SCRIPT_LOCATION)/version_tag_mod
 MOD_IMAGE=$(IMAGE_BUILD)/OpenWRT_image
 MOD_IMAGE_TGZ=$(NAME)_2.0_img.tar.gz
 
+#oneChip Computer configuration files
+ONECHIP_CONFIGS=./oneChip_config_files
 
 #------------
 PACKAGE_FOLDER=$(NAME)
 MOD_PACKAGE_TGZ=$(NAME)_$(VERSION).tar.gz
 
-#.DEFAULT_GOAL:
-#.PHONY: 
+MOD_PACKAGE_RPi_TGZ=oneChip_$(MOD_PACKAGE_TGZ)
+
+.DEFAULT_GOAL: all
+.PHONY: cleanall clean all   oneChip_package package shortimage
 
 #--------------------------------------------
 $(MOD_FOLDER) $(BUILD_FOLDER) $(MOUNT_POINT) $(IMAGE_BUILD_SRC) $(IMAGE_BUILD_TGT) $(PACKAGE_FOLDER): 
@@ -72,9 +76,18 @@ define ReconfigureConfig
 	sed 's|IPV6_ENABLE="no"|IPV6_ENABLE="yes"|' -i  $(1)/ipv6.conf
 endef
 
-building: $(BUILD_SCRIPT_LOCATION) 
+define ReconfigeConfigForRPiLike
+	sed 's:DO_BRIDGE="no":DO_BRIDGE="yes":' -i  $(1)/piratebox.conf
+	sed 's:NET=192.168.77:NET=192.168.1":'  -i  $(1)/piratebox.conf
+	sed 's:DNSMASQ_INTERFACE="wlan0":DNSMASQ_INTERFACE="br0":' -i $(1)/piratebox.conf
+	sed 's:DO_IFCONFIG="yes":DO_IFCONFIG="no":' -i $(1)/piratebox.conf
+endef
+
+building: $(BUILD_SCRIPT_LOCATION) $(MOD_VERSION_TAG) 
 	 $(call ReconfigureConfig,$(BUILD_SCRIPT_LOCATION)/conf)	
 
+custom_rpi_config: building
+	 $(call ReconfigeConfigForRPiLike,$(BUILD_SCRIPT_LOCATION)/conf) 
 
 #--------------------------------------------
 # Preparing image
@@ -115,12 +128,17 @@ image: clean_image building prepare_image_config apply_custom_config $(MOD_IMAGE
 #---------------------------------------------
 # Package creation
 
-$(MOD_PACKAGE_TGZ): prepare_build building $(PACKAGE_FOLDER)
+$(MOD_PACKAGE_TGZ):  $(PACKAGE_FOLDER)
 	cp -r  $(BUILD_FOLDER)/* 	$(PACKAGE_FOLDER)
 	# Here for example tiny howtos or additional scripts
 	tar czf $@  $(PACKAGE_FOLDER)
 	
 
+$(MOD_PACKAGE_RPi_TGZ):  $(PACKAGE_FOLDER)
+	cp -r  $(BUILD_FOLDER)/* 	$(PACKAGE_FOLDER)
+	cp -r $(ONECHIP_CONFIGS)/* 	$(PACKAGE_FOLDER)
+	# Here for example tiny howtos or additional scripts
+	tar czf $@  $(PACKAGE_FOLDER)
 
 #---------------------------------------------
 # Clean stuff
@@ -144,11 +162,13 @@ clean:
 #-------------------------------------------
 # Bundle targets
 
-all: image package
+all: shortimage package oneChip_package
 
 #comp....
 shortimage: image
 
-package: $(MOD_PACKAGE_TGZ)
+package: prepare_build building $(MOD_PACKAGE_TGZ)
 
+oneChip_package: clean prepare_build custom_rpi_config  $(MOD_PACKAGE_RPi_TGZ)
 
+all: oneChip_package package shortimage 
